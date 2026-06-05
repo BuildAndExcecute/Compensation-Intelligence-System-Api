@@ -7,8 +7,11 @@ import { ApiError } from "@/utils/ApiError"
 export const CompensationService = {
   async create(data) {
     const {
+      company_id,
       company,
+      role_id,
       role,
+      location_id,
       city,
       country,
       base_salary,
@@ -16,25 +19,18 @@ export const CompensationService = {
       stock = 0
     } = data
 
-    const companyRecord =
-      await CompanyService.findOrCreate({
-        name: company
-      })
-
-    const roleRecord =
-      await RoleService.findOrCreate(role)
-
-    const locationRecord =
-      await LocationService.findOrCreate({
-        city,
-        country
-      })
+    const resolvedCompanyId =
+      company_id ?? (await CompanyService.findOrCreate({ name: company })).id
+    const resolvedRoleId =
+      role_id ?? (await RoleService.findOrCreate(role)).id
+    const resolvedLocationId =
+      location_id ?? (await LocationService.findOrCreate({ city, country })).id
 
     const duplicate =
       await CompensationRecord.findDuplicate({
-        company_id: companyRecord.id,
-        role_id: roleRecord.id,
-        location_id: locationRecord.id,
+        company_id: resolvedCompanyId,
+        role_id: resolvedRoleId,
+        location_id: resolvedLocationId,
         base_salary,
         bonus,
         stock
@@ -44,17 +40,27 @@ export const CompensationService = {
       throw new ApiError(409, "Duplicate compensation record already exists")
     }
 
-    const compensation =
-      await CompensationRecord.create({
-        company_id: companyRecord.id,
-        role_id: roleRecord.id,
-        location_id: locationRecord.id,
+    try {
+      const compensation = await CompensationRecord.create({
+        company_id: resolvedCompanyId,
+        role_id: resolvedRoleId,
+        location_id: resolvedLocationId,
         base_salary,
         bonus,
         stock
       })
 
-    return compensation.rows[0]
+      return compensation.rows[0]
+    } catch (error) {
+      if (error.code === "23503") {
+        throw new ApiError(
+          400,
+          "Company ID, role ID, or location ID does not exist"
+        )
+      }
+
+      throw error
+    }
   },
 
   async findMany(filters) {

@@ -1,7 +1,7 @@
 import {
-  getCompensationsByCompany
+  getCompensationsByRole
 } from "@/controllers/compensation-record.controller"
 
 export const dynamic = "force-dynamic"
 
-export const GET = getCompensationsByCompany
+export const GET = getCompensationsByRole

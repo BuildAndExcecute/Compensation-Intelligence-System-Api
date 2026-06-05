@@ -3,9 +3,13 @@ import { ApiResponse } from "@/utils/ApiResponse"
 import { ApiError } from "@/utils/ApiError"
 import { CompensationService } from "@/services/compensation-record.service"
 
-const requiredString = (value, fieldName) => {
+const optionalString = (value, fieldName) => {
+  if (value === undefined || value === null || value === "") {
+    return undefined
+  }
+
   if (typeof value !== "string" || value.trim().length === 0) {
-    throw new ApiError(400, `${fieldName} is required`)
+    throw new ApiError(400, `${fieldName} must be a non-empty string`)
   }
 
   return value.trim()
@@ -23,6 +27,32 @@ const optionalAmount = (value, fieldName) => {
   }
 
   return amount
+}
+
+const optionalPositiveId = (value, fieldName) => {
+  if (value === undefined || value === null || value === "") {
+    return undefined
+  }
+
+  const id = Number(value)
+
+  if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
+    throw new ApiError(400, `${fieldName} must be a positive integer`)
+  }
+
+  return id
+}
+
+const requireNameOrId = ({ id, name, fieldName }) => {
+  if (id === undefined && name === undefined) {
+    throw new ApiError(400, `${fieldName} name or ID is required`)
+  }
+}
+
+const requireLocation = ({ location_id, city, country }) => {
+  if (location_id === undefined && (city === undefined || country === undefined)) {
+    throw new ApiError(400, "Location ID or city and country are required")
+  }
 }
 
 const requiredPositiveAmount = (value, fieldName) => {
@@ -49,19 +79,45 @@ const optionalFilterAmount = (value, fieldName) => {
   return amount
 }
 
+const requiredParam = async (context, paramName, fieldName) => {
+  const params = await context.params
+  const value = params?.[paramName]
+
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ApiError(400, `${fieldName} is required`)
+  }
+
+  return value.trim()
+}
+
 export const createCompensation =
   asyncHandler(async (request) => {
     const body = await request.json()
 
     const payload = {
-      company: requiredString(body.company, "Company"),
-      role: requiredString(body.role, "Role"),
-      city: requiredString(body.city, "City"),
-      country: requiredString(body.country, "Country"),
+      company_id: optionalPositiveId(body.company_id, "Company ID"),
+      company: optionalString(body.company, "Company"),
+      role_id: optionalPositiveId(body.role_id, "Role ID"),
+      role: optionalString(body.role, "Role"),
+      location_id: optionalPositiveId(body.location_id, "Location ID"),
+      city: optionalString(body.city, "City"),
+      country: optionalString(body.country, "Country"),
       base_salary: requiredPositiveAmount(body.base_salary, "Base salary"),
       bonus: optionalAmount(body.bonus, "Bonus"),
       stock: optionalAmount(body.stock, "Stock")
     }
+
+    requireNameOrId({
+      id: payload.company_id,
+      name: payload.company,
+      fieldName: "Company"
+    })
+    requireNameOrId({
+      id: payload.role_id,
+      name: payload.role,
+      fieldName: "Role"
+    })
+    requireLocation(payload)
 
     const compensation =
       await CompensationService.create(payload)
@@ -103,5 +159,49 @@ export const getCompensations =
     return ApiResponse.success(
       compensations,
       "Compensation records fetched successfully"
+    )
+  })
+
+export const getCompensationsByCompany =
+  asyncHandler(async (request, context) => {
+    const company = await requiredParam(context, "company", "Company")
+
+    const compensations =
+      await CompensationService.findMany({ company })
+
+    return ApiResponse.success(
+      compensations,
+      "Company compensation records fetched successfully"
+    )
+  })
+
+export const getCompensationsByRole =
+  asyncHandler(async (request, context) => {
+    const role = await requiredParam(context, "role", "Role")
+
+    const compensations =
+      await CompensationService.findMany({ role })
+
+    return ApiResponse.success(
+      compensations,
+      "Role compensation records fetched successfully"
+    )
+  })
+
+export const getCompensationsByLocation =
+  asyncHandler(async (request, context) => {
+    const city = await requiredParam(context, "city", "City")
+    const { searchParams } = new URL(request.url)
+    const country = searchParams.get("country")
+
+    const compensations =
+      await CompensationService.findMany({
+        city,
+        country
+      })
+
+    return ApiResponse.success(
+      compensations,
+      "Location compensation records fetched successfully"
     )
   })
