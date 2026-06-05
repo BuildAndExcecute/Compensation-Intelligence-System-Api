@@ -7,20 +7,6 @@ export const Location = {
     )
   },
 
-  findById: (id) => {
-    return db.query(
-      "SELECT * FROM locations WHERE id = $1",
-      [id]
-    )
-  },
-
-  findByCity: (city) => {
-    return db.query(
-      "SELECT * FROM locations WHERE LOWER(city) = LOWER($1)",
-      [city]
-    )
-  },
-
   findByCityAndCountry: (city, country) => {
     return db.query(
       `SELECT * FROM locations

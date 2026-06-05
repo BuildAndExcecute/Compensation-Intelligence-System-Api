@@ -29,21 +29,6 @@ export const CompanyService = {
     return newCompany.rows[0];
   },
 
-  async getSalaryStats(companyId) {
-    const result = await Company.getSalaryStats(companyId);
-    return result.rows[0];
-  },
-
-  async getHighestPayingRole(companyId) {
-    const result = await Company.getHighestPayingRole(companyId);
-    return result.rows[0];
-  },
-
-  async getLowestPayingRole(companyId) {
-    const result = await Company.getLowestPayingRole(companyId);
-    return result.rows[0];
-  },
-
   async getCompanyOverview(companyId) {
     const companyResult = await Company.findById(companyId);
 

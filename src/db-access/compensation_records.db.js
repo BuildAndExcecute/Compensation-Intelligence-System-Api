@@ -108,32 +108,5 @@ export const CompensationRecord = {
        ORDER BY cr.created_at DESC`,
       values
     )
-  },
-
-  findByCompany: (company_id) => {
-    return db.query(
-      `SELECT * FROM compensation_records
-       WHERE company_id = $1
-       ORDER BY created_at DESC`,
-      [company_id]
-    )
-  },
-
-  findByRole: (role_id) => {
-    return db.query(
-      `SELECT * FROM compensation_records
-       WHERE role_id = $1
-       ORDER BY created_at DESC`,
-      [role_id]
-    )
-  },
-
-  findByLocation: (location_id) => {
-    return db.query(
-      `SELECT * FROM compensation_records
-       WHERE location_id = $1
-       ORDER BY created_at DESC`,
-      [location_id]
-    )
   }
 }

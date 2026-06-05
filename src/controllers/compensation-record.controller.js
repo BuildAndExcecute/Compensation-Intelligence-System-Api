@@ -79,6 +79,18 @@ const optionalFilterAmount = (value, fieldName) => {
   return amount
 }
 
+const optionalFilterString = (value, fieldName) => {
+  if (value === null || value === undefined || value === "") {
+    return undefined
+  }
+
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ApiError(400, `${fieldName} must be a non-empty string`)
+  }
+
+  return value.trim()
+}
+
 const requiredParam = async (context, paramName, fieldName) => {
   const params = await context.params
   const value = params?.[paramName]
@@ -88,6 +100,30 @@ const requiredParam = async (context, paramName, fieldName) => {
   }
 
   return value.trim()
+}
+
+const getCompensationFilters = (searchParams) => {
+  const filters = {
+    company: optionalFilterString(searchParams.get("company"), "Company"),
+    role: optionalFilterString(searchParams.get("role"), "Role"),
+    city: optionalFilterString(searchParams.get("city"), "City"),
+    country: optionalFilterString(searchParams.get("country"), "Country"),
+    min_total: optionalFilterAmount(searchParams.get("min_total"), "Minimum total compensation"),
+    max_total: optionalFilterAmount(searchParams.get("max_total"), "Maximum total compensation")
+  }
+
+  if (
+    filters.min_total !== undefined &&
+    filters.max_total !== undefined &&
+    filters.min_total > filters.max_total
+  ) {
+    throw new ApiError(
+      400,
+      "Minimum total compensation cannot be greater than maximum total compensation"
+    )
+  }
+
+  return filters
 }
 
 export const createCompensation =
@@ -132,26 +168,7 @@ export const createCompensation =
 export const getCompensations =
   asyncHandler(async (request) => {
     const { searchParams } = new URL(request.url)
-
-    const filters = {
-      company: searchParams.get("company"),
-      role: searchParams.get("role"),
-      city: searchParams.get("city"),
-      country: searchParams.get("country"),
-      min_total: optionalFilterAmount(searchParams.get("min_total"), "Minimum total compensation"),
-      max_total: optionalFilterAmount(searchParams.get("max_total"), "Maximum total compensation")
-    }
-
-    if (
-      filters.min_total !== undefined &&
-      filters.max_total !== undefined &&
-      filters.min_total > filters.max_total
-    ) {
-      throw new ApiError(
-        400,
-        "Minimum total compensation cannot be greater than maximum total compensation"
-      )
-    }
+    const filters = getCompensationFilters(searchParams)
 
     const compensations =
       await CompensationService.findMany(filters)
@@ -185,23 +202,5 @@ export const getCompensationsByRole =
     return ApiResponse.success(
       compensations,
       "Role compensation records fetched successfully"
-    )
-  })
-
-export const getCompensationsByLocation =
-  asyncHandler(async (request, context) => {
-    const city = await requiredParam(context, "city", "City")
-    const { searchParams } = new URL(request.url)
-    const country = searchParams.get("country")
-
-    const compensations =
-      await CompensationService.findMany({
-        city,
-        country
-      })
-
-    return ApiResponse.success(
-      compensations,
-      "Location compensation records fetched successfully"
     )
   })

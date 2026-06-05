@@ -76,13 +76,5 @@ export const CompensationService = {
 
     const result = await CompensationRecord.findMany(normalizedFilters)
     return result.rows
-  },
-
-  calculateTotalCompensation({
-    base_salary,
-    bonus = 0,
-    stock = 0
-  }) {
-    return Number(base_salary) + Number(bonus || 0) + Number(stock || 0)
   }
 }
