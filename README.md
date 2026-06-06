@@ -4,20 +4,6 @@ A comprehensive web application that helps users explore and compare salary info
 
 **Live Demo:** [https://compensation-intelligence-system-ap.vercel.app](https://compensation-intelligence-system-ap.vercel.app)
 
-## 📋 Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-- [Database Schema](#database-schema)
-- [API Endpoints](#api-endpoints)
-- [Project Structure](#project-structure)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## ✨ Features
 
