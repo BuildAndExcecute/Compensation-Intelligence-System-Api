@@ -24,11 +24,30 @@ const normalizeConnectionString = (value) => {
   return connectionString;
 };
 
-const pool = new Pool({
-  connectionString: normalizeConnectionString(process.env.DATABASE_URL),
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
+let pool;
 
-export default pool;
+const getPool = () => {
+  const connectionString = normalizeConnectionString(process.env.DATABASE_URL);
+
+  if (!connectionString) {
+    throw new Error("DATABASE_URL environment variable is required");
+  }
+
+  if (!pool) {
+    pool = new Pool({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
+  }
+
+  return pool;
+};
+
+const db = {
+  query: (...args) => getPool().query(...args),
+  connect: (...args) => getPool().connect(...args),
+};
+
+export default db;
