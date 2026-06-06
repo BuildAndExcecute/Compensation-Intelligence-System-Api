@@ -3,6 +3,18 @@ import { ApiResponse } from "@/utils/ApiResponse"
 import { ApiError } from "@/utils/ApiError"
 import { CompanyService } from "@/services/company.service"
 
+const optionalString = (value, fieldName) => {
+  if (value === null || value === undefined || value === "") {
+    return undefined
+  }
+
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ApiError(400, `${fieldName} must be a non-empty string`)
+  }
+
+  return value.trim()
+}
+
 export const createCompany = asyncHandler(
   async (request) => {
     const { name, industry, website } =
@@ -26,6 +38,22 @@ export const createCompany = asyncHandler(
       company,
       "Company created successfully",
       201
+    )
+  }
+)
+
+export const getCompanies = asyncHandler(
+  async (request) => {
+    const { searchParams } = new URL(request.url)
+    const name = optionalString(searchParams.get("name"), "Company name")
+
+    const companies = await CompanyService.findMany({ name })
+
+    return ApiResponse.success(
+      companies,
+      name
+        ? "Company fetched successfully"
+        : "Companies fetched successfully"
     )
   }
 )

@@ -4,7 +4,7 @@ const totalCompensationSql =
   "cr.base_salary + COALESCE(cr.bonus, 0) + COALESCE(cr.stock, 0)"
 
 export const CompensationRecord = {
-  create: ({
+  upsertByIdentity: ({
     company_id,
     role_id,
     location_id,
@@ -13,31 +13,40 @@ export const CompensationRecord = {
     stock = 0
   }) => {
     return db.query(
-      `INSERT INTO compensation_records
-       (company_id, role_id, location_id, base_salary, bonus, stock)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [company_id, role_id, location_id, base_salary, bonus, stock]
-    )
-  },
-
-  findDuplicate: ({
-    company_id,
-    role_id,
-    location_id,
-    base_salary,
-    bonus = 0,
-    stock = 0
-  }) => {
-    return db.query(
-      `SELECT id FROM compensation_records
-       WHERE company_id = $1
-         AND role_id = $2
-         AND location_id = $3
-         AND base_salary = $4
-         AND COALESCE(bonus, 0) = $5
-         AND COALESCE(stock, 0) = $6
-       LIMIT 1`,
+      `WITH existing AS (
+         SELECT id
+         FROM compensation_records
+         WHERE company_id = $1
+           AND role_id = $2
+           AND location_id = $3
+         ORDER BY
+           (
+             base_salary = $4
+             AND COALESCE(bonus, 0) = $5
+             AND COALESCE(stock, 0) = $6
+           ) DESC,
+           created_at DESC,
+           id DESC
+         LIMIT 1
+       ),
+       updated AS (
+         UPDATE compensation_records
+         SET base_salary = $4,
+             bonus = $5,
+             stock = $6
+         WHERE id IN (SELECT id FROM existing)
+         RETURNING *, true AS was_updated
+       ),
+       inserted AS (
+         INSERT INTO compensation_records
+           (company_id, role_id, location_id, base_salary, bonus, stock)
+         SELECT $1, $2, $3, $4, $5, $6
+         WHERE NOT EXISTS (SELECT 1 FROM updated)
+         RETURNING *, false AS was_updated
+       )
+       SELECT * FROM updated
+       UNION ALL
+       SELECT * FROM inserted`,
       [company_id, role_id, location_id, base_salary, bonus, stock]
     )
   },

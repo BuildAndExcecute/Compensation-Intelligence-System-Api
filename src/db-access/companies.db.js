@@ -1,6 +1,14 @@
 import db from "@/lib/db.js";
 
 export const Company = {
+  findAll: () => {
+    return db.query(
+      `SELECT *
+       FROM companies
+       ORDER BY name ASC`
+    );
+  },
+
   findById: (id) => {
     return db.query(
       "SELECT * FROM companies WHERE id = $1",

@@ -155,13 +155,15 @@ export const createCompensation =
     })
     requireLocation(payload)
 
-    const compensation =
+    const { record: compensation, created } =
       await CompensationService.create(payload)
 
     return ApiResponse.success(
       compensation,
-      "Compensation record created successfully",
-      201
+      created
+        ? "Compensation record created successfully"
+        : "Compensation record updated successfully",
+      created ? 201 : 200
     )
   })
 

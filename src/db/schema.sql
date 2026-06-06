@@ -29,5 +29,5 @@ CREATE TABLE compensation_records(
   bonus INT DEFAULT 0 CHECK(bonus>=0),
   stock INT DEFAULT 0 CHECK(stock>=0),
   created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(company_id, role_id, location_id, base_salary, bonus, stock)
+  UNIQUE(company_id, role_id, location_id)
 );

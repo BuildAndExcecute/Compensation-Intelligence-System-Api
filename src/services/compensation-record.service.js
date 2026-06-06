@@ -26,22 +26,8 @@ export const CompensationService = {
     const resolvedLocationId =
       location_id ?? (await LocationService.findOrCreate({ city, country })).id
 
-    const duplicate =
-      await CompensationRecord.findDuplicate({
-        company_id: resolvedCompanyId,
-        role_id: resolvedRoleId,
-        location_id: resolvedLocationId,
-        base_salary,
-        bonus,
-        stock
-      })
-
-    if (duplicate.rows.length > 0) {
-      throw new ApiError(409, "Duplicate compensation record already exists")
-    }
-
     try {
-      const compensation = await CompensationRecord.create({
+      const compensation = await CompensationRecord.upsertByIdentity({
         company_id: resolvedCompanyId,
         role_id: resolvedRoleId,
         location_id: resolvedLocationId,
@@ -50,7 +36,13 @@ export const CompensationService = {
         stock
       })
 
-      return compensation.rows[0]
+      const record = compensation.rows[0]
+      const { was_updated, ...data } = record
+
+      return {
+        record: data,
+        created: !was_updated
+      }
     } catch (error) {
       if (error.code === "23503") {
         throw new ApiError(

@@ -11,6 +11,22 @@ export const normalizeCompanyName = (name) => {
 };
 
 export const CompanyService = {
+  async findMany({ name } = {}) {
+    if (name) {
+      const normalizedName = normalizeCompanyName(name);
+      const company = await Company.findByName(normalizedName);
+
+      if (company.rows.length === 0) {
+        throw new ApiError(404, "Company not found");
+      }
+
+      return company.rows;
+    }
+
+    const companies = await Company.findAll();
+    return companies.rows;
+  },
+
   async findOrCreate({ name, industry, website }) {
     const normalizedName = normalizeCompanyName(name);
 
